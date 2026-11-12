@@ -1,41 +1,27 @@
 # Roadmap
 
-## V5 — implementado
+## v6 — implementado
 
-- simulação temporal do semestre com avanço de 1 dia, 1 semana ou próximo evento;
-- painel visual mostrando data anterior → nova data e eventos processados;
-- 30 estudantes fictícios;
-- 6 disciplinas;
-- 180 matrículas aluno × disciplina;
-- 5 aulas por dia;
-- RAs com calendários e componentes diferentes;
-- média acadêmica de referência 7,0;
-- análise por prova, projeto e demais componentes da RA;
-- frequência acumulada por disciplina e margem de faltas restante;
-- AVA geral + pendências por matéria;
-- alertas automáticos graduais com anti-spam;
-- consolidação de múltiplos sinais em um único e-mail-resumo;
-- linha do tempo de proatividade;
-- K-Means executado em Python/scikit-learn;
-- PCA 2D para visualização dos clusters;
-- gráficos de dispersão, tamanho dos grupos e centróides;
-- validação automática da consistência da base;
-- testes automatizados das regras e do semestre.
+- eventos do AVA com ID e pseudônimo; agregação semanal com deduplicação;
+- completude da coleta, turma sem logs e histórico desconhecido tratados como dados incompletos;
+- pendências por prazo (72 atividades previstas);
+- sugestão revisável com período, motivos e qualidade da coleta;
+- revisão humana aceitar/ajustar/descartar com registro, sem envio de mensagens;
+- importação CSV com validação e rastreabilidade até o evento de origem;
+- nova interface (Início, Revisão, Turma, Aluno, Coleta do AVA, Semestre, Perfis, Sobre);
+- matriz de cenários T01–T21 automatizada.
 
-## Próximas evoluções
+## v5 — base mantida
 
-- PostgreSQL/MySQL no lugar do JSON demonstrativo;
-- importação CSV;
-- autenticação e perfis de acesso;
-- configuração das regras por instituição;
-- gráficos históricos por aluno/disciplina;
-- SMTP real com credenciais institucionais seguras;
-- histórico de intervenções pedagógicas;
-- filtros por turma, período e professor.
+Simulação temporal do semestre, 30 alunos, 6 disciplinas, RAs com componentes, frequência acumulada, score de atenção, K-Means + PCA.
 
-## Futuro institucional
+## Próximos passos
 
-- integração com sistema acadêmico/AVA por API autorizada;
-- validação de critérios com equipe pedagógica;
-- avaliação ética e de privacidade/LGPD;
-- validação externa dos clusters e dos limiares de alerta.
+| Item | Responsável | Impacto | Próximo passo |
+|---|---|---|---|
+| Sessões de validação com tutores (Aula 10) | Equipe | Saber se o revisor distingue baixa atividade de dado ausente | Aplicar o protocolo de `docs/relatorio.md` |
+| Calibrar corte de 50% e base mínima | Equipe + docente | Menos falsos sinais | Comparar sugestões aceitas e descartadas |
+| Registrar se o contato ajudou | Marcelo | Medir utilidade, não só o alerta | Campo de acompanhamento após a decisão |
+| Banco de dados com transação | Equipe | Concorrência entre processos | PostgreSQL |
+| Integração autorizada com o AVA | Instituição | Dados reais | Confirmar campos e significado dos eventos; LGPD |
+| Autenticação e perfis | Equipe | Saber quem decide | Login institucional |

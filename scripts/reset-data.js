@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const seed = path.join(__dirname, '..', 'src', 'data', 'academic.seed.json');
-const target = path.join(__dirname, '..', 'src', 'data', 'academic.json');
-fs.copyFileSync(seed, target);
-console.log('Semestre demonstrativo restaurado para a data inicial.');
+// Restaura o estado inicial da demonstração (base acadêmica + eventos do AVA).
+const repository = require('../src/repositories/academic.repository');
+
+repository.resetData();
+console.log(`Semestre demonstrativo restaurado para a data inicial em ${repository.dataDir()}.`);
+console.log('Base: src/data/academic.json | Eventos do AVA: src/data/ava-events.json (ambos recriados a partir dos arquivos *.seed.json).');

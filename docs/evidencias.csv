@@ -1,0 +1,26 @@
+Requisito,Teste,Cenario,Resultado esperado,Resultado observado,Evidencia verificavel,Comando,Commit
+R01 Agregar eventos do AVA por aluno x disciplina x semana sem contar duplicados,T01,Mesmo evento importado duas vezes,Conta 1 evento pelo ID,1 evento; duplicates=1,tests/ava-rules.test.js; tela Coleta do AVA (duplicados ignorados),npm test,f93cff4
+R01,T02,Dois eventos distintos no mesmo dia,2 eventos e 1 dia ativo,2 eventos; 1 dia ativo,tests/ava-rules.test.js,npm test,f93cff4
+R01,T03,Eventos no domingo e na segunda,Semanas diferentes (seg-dom),semanas 2026-03-02 e 2026-03-09,tests/ava-rules.test.js,npm test,f93cff4
+R01,T04,Mesmo aluno em duas disciplinas e outro aluno na mesma disciplina,3 grupos separados,3 grupos com 1 evento cada,tests/ava-rules.test.js,npm test,f93cff4
+R02 Rejeitar entrada invalida com motivo compreensivel,T05,Data 31/02; tipo login; id ausente; entrega sem atividade,Nenhum entra na contagem; motivo por evento,4 rejeitados com motivo,tests/ava-rules.test.js,npm test,f93cff4
+R02,T13,CSV sem colunas obrigatorias e com linha em branco,Erro de cabecalho; numero da linha preservado,erro lista colunas faltantes; linhas 2 e 4,tests/ava-rules.test.js,npm test,f93cff4
+R02,T19,Importar dados_demo/eventos_ava_demo.csv (validar e depois importar duas vezes),5 aceitos; 1 duplicado; 4 rejeitados; dry-run nao grava; reimportar nao duplica,5/1/4; base inalterada no dry-run; 0 aceitos na 2a importacao,tests/ava-integration.test.js; tela Coleta do AVA > Validar sem importar,npm test,f93cff4
+R02,T21,Data de acesso invalida/futura; days=0; semana invalida,HTTP 400 com mensagem,400 com mensagem em todos,tests/ava-integration.test.js,npm test,f93cff4
+R03 Historico desconhecido nao equivale a zero,T06,sugerir(None 20 1) e variacoes,estado incompleto; acao conferir dados,incompleto em 3 variacoes,tests/ava-rules.test.js,npm test,f93cff4
+R03,T09,Zero conhecido x desconhecido,0->0 sem sinal; 12->0 queda,sem_sinal; queda de atividade,tests/ava-rules.test.js,npm test,f93cff4
+R03,T16,Aluno s25 com historico do AVA so a partir de 13/04 avaliado em 23/03,Todas as disciplinas incompleto; pendencias desconhecidas,incompleto em 6 disciplinas; pendencias null,tests/ava-integration.test.js; tela Aluno > Nicolas Ferreira,npm test,f93cff4
+R04 Conferir completude da coleta antes de sugerir,T12,Semana com falha e semana sem registro de um dia,Coleta incompleta,incompleta; 6 de 7 dias,tests/ava-rules.test.js,npm test,f93cff4
+R04,T14,Semana 23/03-29/03 com exportacao parada em 25 e 26/03,Analise incompleta e nenhuma sugestao de AVA naquela data,incompleto em todas as disciplinas; 0 sugestoes ava_semana,tests/ava-integration.test.js; tela Coleta do AVA (hachura),npm test,f93cff4
+R04,T15,Disciplina dec sem eventos da turma em 04/05-10/05,Conferir coleta; outras disciplinas avaliadas,dec incompleto com motivo; alg avaliada,tests/ava-integration.test.js; tela Coleta do AVA (celula vermelha),npm test,f93cff4
+R05 Pendencias por prazos e entregas,T11,5 atividades: no prazo; atrasada; nao entregue; vencida >21 dias; prazo futuro,1 pendente (a3); 1 no prazo; 1 atrasada,1 pendente; 1; 1,tests/ava-rules.test.js; tela Aluno > Sinal da semana,npm test,f93cff4
+R06 Sugestao revisavel com periodo e motivos,T07,20 para 10 eventos e 1 pendencia,revisar com 2 motivos e acao oferecer apoio,revisar; queda de atividade + atividade pendente,tests/ava-rules.test.js,npm test,f93cff4
+R06,T08,Fronteira do corte de 50%,10/20 e queda; 11/20 nao,queda; sem_sinal,tests/ava-rules.test.js,npm test,f93cff4
+R06,T10,Base minima: 4 para 0,Sem queda com base 5; queda com base 1,sem_sinal; revisar,tests/ava-rules.test.js,npm test,f93cff4
+R06,T17,Aluna-foco Ana em 18/05,revisar; periodo 11/05-17/05; coleta completa; queda em alg,revisar; periodo correto; alg 0 eventos (anterior >= 5),tests/ava-integration.test.js; tela Aluno > Ana Ribeiro,npm test,f93cff4
+R07 Revisao humana sem contato automatico,T18,Simular ate 01/06,Todas as sugestoes pending_review e sem sentAt; evidencia com periodo e coleta,todas pending_review; sem sentAt,tests/ava-integration.test.js,npm test,f93cff4
+R07,T20,Decisao invalida; sem responsavel; descartar sem motivo; ajustar sem mudanca; ajustar valido; repetir,400 400 400 400; 200 adjusted com finalBody; 409; 1 decisao listada,conforme esperado,tests/ava-integration.test.js; tela Revisao > Decididas,npm test,f93cff4
+R08 Base demonstrativa consistente e reproduzivel,-,Validacao da base,30 alunos; 6 disciplinas; 180 matriculas; 72 atividades; pseudonimos unicos,ok,scripts/check-data.js,npm run check:data,f93cff4
+R09 Agrupamento exploratorio K-Means,-,Simular 70 dias e agrupar,30 alunos em 5 grupos; projecao PCA valida,5 grupos; silhouette ~0.48 neste ambiente,scripts/check-ai.js,npm run check:ai,f93cff4
+R07,-,Concorrencia: dois revisores no mesmo instante,Uma decisao,NAO TESTADO (ver docs/arquitetura.md),-,-,-
+R06,-,Validacao com tutores (Aula 10),Revisor distingue baixa atividade de dado ausente,PENDENTE: sessoes nao realizadas,docs/relatorio.md (protocolo),-,-

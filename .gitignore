@@ -5,3 +5,8 @@ npm-debug.log*
 
 __pycache__/
 *.pyc
+
+# Estado de execução (recriado a partir dos *.seed.json; restaure com npm run reset-data)
+src/data/academic.json
+src/data/ava-events.json
+src/data/*.tmp

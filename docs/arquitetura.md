@@ -1,76 +1,79 @@
-# Arquitetura — V5
+# Arquitetura — v6
+
+Tudo roda **localmente**: um processo Node.js (API + arquivos da interface) e, só para a tela de perfis, um processo Python chamado sob demanda. Não há serviço externo; o AVA real e o e-mail **não** estão integrados (ver "Simulado e planejado").
+
+## Componentes e quem chama quem
 
 ```text
-Frontend (HTML/CSS/JS)
-        ↓
-API REST (Node + Express)
-        ↓
-┌────────────────────────────────────────────────────┐
-│ Serviços                                           │
-│ simulation.service   → calendário e eventos        │
-│ academic.service     → frequência/RA/AVA/score     │
-│ notification.service → alertas + digest anti-spam  │
-│ clustering.service   → integração Node → Python    │
-└────────────────────────────────────────────────────┘
-        ↓                              ↓
-JSON sintético                  Python/scikit-learn
-                                      ↓
-                              K-Means + PCA 2D
+ Navegador (public/)                         interface: Início, Revisão, Turma, Aluno, Coleta do AVA...
+      │  HTTP/JSON
+      ▼
+ API REST — server.js + routes/ + controllers/   valida entrada, devolve 400/404/409 com mensagem
+      │
+      ├── ava.service.js ──────► ava-rules.js     (funções puras, sem arquivo)
+      │     janela de 2 semanas,       agregar + deduplicar por ID
+      │     histórico do aluno,        completude da coleta
+      │     rastreabilidade, CSV       pendências por prazo, sugerir()
+      │
+      ├── simulation.service.js   calendário, aulas/faltas, eventos do AVA, notas,
+      │                           incidentes de coleta, fila de sugestões (pending_review)
+      ├── notification.service.js textos das sugestões + evidência (período, coleta, motivos)
+      ├── academic.service.js     frequência, RA, score de atenção
+      └── clustering.service.js ──► scripts/cluster_students.py (K-Means + PCA, stdin/stdout JSON)
+      │
+      ▼
+ academic.repository.js   leitura com cache somente leitura; gravação atômica (arquivo .tmp + rename)
+      │
+      ├── src/data/academic.json     turma, matrículas, atividades previstas, log da coleta, sugestões e decisões
+      └── src/data/ava-events.json   eventos brutos do AVA (inclui duplicados recebidos)
+          (ambos recriados a partir de *.seed.json)
 ```
 
-## Simulação temporal
+## Fluxo principal: do evento à decisão
 
-O `simulation.service` mantém a data do semestre e processa:
+```text
+evento AVA ──► validação ──► dedup por ID ──► agregado semanal ─┐
+ (id, aluno pseudônimo,                      (eventos, dias      │
+  disciplina, data, tipo)                     ativos, entregas)  │
+                                                                  ▼
+log diário da coleta ──► semana completa? ──► turma tem eventos? ──► histórico do aluno conhecido?
+                                                                  │ não → estado "incompleto" (conferir dados)
+atividades previstas + entregas ──► pendências por prazo ─────────┤
+                                                                  ▼
+                                               sugerir(atual, anterior, pendências)
+                                                 → "sem_sinal" | "revisar" (+ motivos)
+                                                                  │
+               sinais de frequência/RA/inatividade ───────────────┤ anti-spam: impressão digital por sinal,
+                                                                  ▼ resumo único, intervalo de 5 dias
+                                         sugestão status=pending_review (com evidência)
+                                                                  │
+                                                  POST /notifications/:id/review
+                                                                  ▼
+                                   approved | adjusted | discarded  (nome, data, observação, texto final)
+```
 
-- aulas da grade semanal;
-- faltas por aluno e disciplina;
-- acesso ao AVA e pendências;
-- aplicação e liberação de RAs;
-- componentes como prova/projeto/lista;
-- mudança de níveis de atenção;
-- comunicações automáticas;
-- resumo do último avanço (`from → to`, eventos e alertas gerados).
+## Onde cada coisa acontece
 
-O simulador usa valores determinísticos derivados dos IDs e das datas para que o mesmo reset reproduza a mesma demonstração.
+| Responsabilidade | Local |
+|---|---|
+| Validação de evento (campos, data real, tipo, aluno/disciplina/atividade conhecidos) | `ava-rules.validateEvent` |
+| Deduplicação e agregação semanal | `ava-rules.aggregateWeekly` |
+| Completude da coleta | `ava-rules.collectionQuality` + `simulation.collectionLog` |
+| Pendências por prazo | `ava-rules.pendingFromDeadlines` |
+| Regra da sugestão (50%, base mínima 5) | `ava-rules.suggest` |
+| Janela de 2 semanas completas, histórico, "turma sem logs" | `ava.service.weekIndicators` |
+| Validação de entradas HTTP | `controllers/academic.controller.js` |
+| Persistência | `repositories/academic.repository.js` |
 
-## Motor acadêmico
+## Simulado e planejado
 
-A referência de desempenho do protótipo é **7,0**. O score combina:
+| Item | Estado |
+|---|---|
+| Exportação diária do AVA | **Simulada** (eventos sintéticos determinísticos; 3% reexportados em duplicidade) |
+| Falhas de coleta | **Simuladas**: exportação parada em 25–26/03; disciplina "Descoberta" sem eventos em 04–10/05 |
+| Envio de mensagem | **Não existe**. A decisão humana é registrada; o contato é feito pelo responsável fora do sistema |
+| Integração com AVA real, autenticação, banco de dados | **Planejado** |
 
-- frequência acumulada e margem de faltas;
-- nota da RA atual e seu componente mais fraco;
-- dias sem acessar o AVA;
-- atividades pendentes;
-- combinação de múltiplos sinais.
+## Concorrência
 
-## Alertas
-
-O sistema evita excesso de mensagens:
-
-- comunica cada faixa de frequência uma única vez;
-- comunica cada faixa de AVA uma única vez;
-- cada nova RA pode gerar um alerta novo;
-- múltiplos sinais simultâneos são agrupados em um digest;
-- avisos não críticos respeitam cooldown de 5 dias;
-- alertas críticos podem ser enviados imediatamente.
-
-## IA não supervisionada
-
-O backend envia seis variáveis por aluno para o script Python:
-
-- presença média;
-- média acadêmica;
-- dias sem AVA;
-- pendências;
-- média em provas;
-- média em projetos.
-
-O K-Means agrupa os estudantes sem rótulos prévios. O PCA reduz as seis dimensões para duas **somente para visualização**, permitindo desenhar o gráfico de dispersão dos clusters no frontend.
-
-## Dados
-
-`academic.seed.json` representa o início do semestre.
-
-`academic.json` representa o estado atual da simulação.
-
-A gravação é atômica para evitar leitura de JSON incompleto. `npm run reset-data` restaura o seed.
+A verificação "esta sugestão já foi decidida?" e a gravação acontecem na mesma função **síncrona** (`saveReview`). Como o Node executa um callback por vez, duas requisições ao **mesmo processo** não se intercalam: a segunda recebe 409. Essa garantia **não vale** com mais de um processo ou servidor usando os mesmos arquivos JSON; nesse caso seria preciso um banco com transação. Os testes cobrem a repetição sequencial (T20); tentativas simultâneas **não foram testadas**. Ver `docs/decisoes.md`.

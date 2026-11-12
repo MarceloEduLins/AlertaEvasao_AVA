@@ -9,11 +9,13 @@ const { validateAcademicData } = require('./src/services/data-validation.service
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/health', healthRoutes);
 app.use('/api', academicRoutes);
+
+app.use('/api', (_req, res) => res.status(404).json({ message: 'Rota da API não encontrada.' }));
 
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -29,7 +31,7 @@ if (require.main === module) {
     process.exit(1);
   }
   app.listen(PORT, () => {
-    console.log(`Alerta Evasão v5 rodando em http://localhost:${PORT}`);
+    console.log(`Alerta Evasão v6 rodando em http://localhost:${PORT}`);
     console.log(`Base: ${validation.summary.students} alunos, ${validation.summary.subjects} disciplinas, ${validation.summary.enrollments} matrículas.`);
   });
 }

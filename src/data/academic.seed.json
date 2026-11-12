@@ -10,7 +10,32 @@
     "notificationFingerprints": [],
     "focusStudentId": "s1",
     "processedCalendarEvents": [],
-    "lastAdvance": null
+    "lastAdvance": null,
+    "collectionLog": [
+      {
+        "date": "2026-02-23",
+        "status": "ok",
+        "note": null
+      }
+    ],
+    "collectionIncidents": [
+      {
+        "id": "inc-1",
+        "type": "export_failure",
+        "from": "2026-03-25",
+        "to": "2026-03-26",
+        "subjectId": null,
+        "note": "Exportação diária do AVA não executou; eventos desses dias não chegaram ao sistema."
+      },
+      {
+        "id": "inc-2",
+        "type": "silent_gap",
+        "from": "2026-05-04",
+        "to": "2026-05-10",
+        "subjectId": "dec",
+        "note": "Coleta registrada como concluída, mas a disciplina não enviou nenhum evento (integração da disciplina)."
+      }
+    ]
   },
   "classes": [
     {
@@ -458,7 +483,8 @@
       "focus": true,
       "scenario": "proactive_demo",
       "registration": "CC260001",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-f7117a"
     },
     {
       "id": "s2",
@@ -468,7 +494,8 @@
       "archetype": "attendance_risk",
       "focus": false,
       "registration": "CC260002",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-8a0f8a"
     },
     {
       "id": "s3",
@@ -478,7 +505,8 @@
       "archetype": "exam_difficulty",
       "focus": false,
       "registration": "CC260003",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-934e66"
     },
     {
       "id": "s4",
@@ -488,7 +516,8 @@
       "archetype": "project_difficulty",
       "focus": false,
       "registration": "CC260004",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-380108"
     },
     {
       "id": "s5",
@@ -498,7 +527,8 @@
       "archetype": "ava_disengagement",
       "focus": false,
       "registration": "CC260005",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-524359"
     },
     {
       "id": "s6",
@@ -508,7 +538,8 @@
       "archetype": "stable",
       "focus": false,
       "registration": "CC260006",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-53ad92"
     },
     {
       "id": "s7",
@@ -518,7 +549,8 @@
       "archetype": "mixed_risk",
       "focus": false,
       "registration": "CC260007",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-1c2805"
     },
     {
       "id": "s8",
@@ -528,7 +560,8 @@
       "archetype": "attendance_risk",
       "focus": false,
       "registration": "CC260008",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-75a57d"
     },
     {
       "id": "s9",
@@ -538,7 +571,8 @@
       "archetype": "exam_difficulty",
       "focus": false,
       "registration": "CC260009",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-0730aa"
     },
     {
       "id": "s10",
@@ -548,7 +582,8 @@
       "archetype": "project_difficulty",
       "focus": false,
       "registration": "CC260010",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-a99e12"
     },
     {
       "id": "s11",
@@ -558,7 +593,8 @@
       "archetype": "ava_disengagement",
       "focus": false,
       "registration": "CC260011",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-aa299a"
     },
     {
       "id": "s12",
@@ -568,7 +604,8 @@
       "archetype": "stable",
       "focus": false,
       "registration": "CC260012",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-ff6e01"
     },
     {
       "id": "s13",
@@ -578,7 +615,8 @@
       "archetype": "mixed_risk",
       "focus": false,
       "registration": "CC260013",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-f31671"
     },
     {
       "id": "s14",
@@ -588,7 +626,8 @@
       "archetype": "attendance_risk",
       "focus": false,
       "registration": "CC260014",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-1d77ab"
     },
     {
       "id": "s15",
@@ -598,7 +637,8 @@
       "archetype": "exam_difficulty",
       "focus": false,
       "registration": "CC260015",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-18611a"
     },
     {
       "id": "s16",
@@ -608,7 +648,8 @@
       "archetype": "project_difficulty",
       "focus": false,
       "registration": "CC260016",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-a48935"
     },
     {
       "id": "s17",
@@ -618,7 +659,8 @@
       "archetype": "ava_disengagement",
       "focus": false,
       "registration": "CC260017",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-00bba7"
     },
     {
       "id": "s18",
@@ -628,7 +670,8 @@
       "archetype": "stable",
       "focus": false,
       "registration": "CC260018",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-faed69"
     },
     {
       "id": "s19",
@@ -638,7 +681,8 @@
       "archetype": "mixed_risk",
       "focus": false,
       "registration": "CC260019",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-4e8e62"
     },
     {
       "id": "s20",
@@ -648,7 +692,8 @@
       "archetype": "attendance_risk",
       "focus": false,
       "registration": "CC260020",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-d06ffe"
     },
     {
       "id": "s21",
@@ -658,7 +703,8 @@
       "archetype": "exam_difficulty",
       "focus": false,
       "registration": "CC260021",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-b002f2"
     },
     {
       "id": "s22",
@@ -668,7 +714,8 @@
       "archetype": "project_difficulty",
       "focus": false,
       "registration": "CC260022",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-6234a1"
     },
     {
       "id": "s23",
@@ -678,7 +725,8 @@
       "archetype": "ava_disengagement",
       "focus": false,
       "registration": "CC260023",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-2be1eb"
     },
     {
       "id": "s24",
@@ -688,7 +736,8 @@
       "archetype": "stable",
       "focus": false,
       "registration": "CC260024",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-09cdf2"
     },
     {
       "id": "s25",
@@ -698,7 +747,10 @@
       "archetype": "stable",
       "focus": false,
       "registration": "CC260025",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-7c2673",
+      "avaHistoryFrom": "2026-04-13",
+      "scenario": "late_ava_history"
     },
     {
       "id": "s26",
@@ -708,7 +760,8 @@
       "archetype": "attendance_risk",
       "focus": false,
       "registration": "CC260026",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-37e4a4"
     },
     {
       "id": "s27",
@@ -718,7 +771,8 @@
       "archetype": "exam_difficulty",
       "focus": false,
       "registration": "CC260027",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-a278fb"
     },
     {
       "id": "s28",
@@ -728,7 +782,8 @@
       "archetype": "project_difficulty",
       "focus": false,
       "registration": "CC260028",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-d22128"
     },
     {
       "id": "s29",
@@ -738,7 +793,8 @@
       "archetype": "ava_disengagement",
       "focus": false,
       "registration": "CC260029",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-d69716"
     },
     {
       "id": "s30",
@@ -748,7 +804,8 @@
       "archetype": "mixed_risk",
       "focus": false,
       "registration": "CC260030",
-      "semester": 1
+      "semester": 1,
+      "pseudoId": "ps-4bbb27"
     }
   ],
   "enrollments": [
@@ -2197,7 +2254,7 @@
       "subjectId": "alg",
       "classesHeld": 0,
       "absences": 0,
-      "lastAvaAccess": "2026-02-23",
+      "lastAvaAccess": null,
       "pendingActivities": 0,
       "assessments": {},
       "history": []
@@ -2207,7 +2264,7 @@
       "subjectId": "exp",
       "classesHeld": 0,
       "absences": 0,
-      "lastAvaAccess": "2026-02-23",
+      "lastAvaAccess": null,
       "pendingActivities": 0,
       "assessments": {},
       "history": []
@@ -2217,7 +2274,7 @@
       "subjectId": "fil",
       "classesHeld": 0,
       "absences": 0,
-      "lastAvaAccess": "2026-02-23",
+      "lastAvaAccess": null,
       "pendingActivities": 0,
       "assessments": {},
       "history": []
@@ -2227,7 +2284,7 @@
       "subjectId": "dec",
       "classesHeld": 0,
       "absences": 0,
-      "lastAvaAccess": "2026-02-23",
+      "lastAvaAccess": null,
       "pendingActivities": 0,
       "assessments": {},
       "history": []
@@ -2237,7 +2294,7 @@
       "subjectId": "mod",
       "classesHeld": 0,
       "absences": 0,
-      "lastAvaAccess": "2026-02-23",
+      "lastAvaAccess": null,
       "pendingActivities": 0,
       "assessments": {},
       "history": []
@@ -2247,7 +2304,7 @@
       "subjectId": "lea",
       "classesHeld": 0,
       "absences": 0,
-      "lastAvaAccess": "2026-02-23",
+      "lastAvaAccess": null,
       "pendingActivities": 0,
       "assessments": {},
       "history": []
@@ -2555,10 +2612,444 @@
   ],
   "notifications": [],
   "meta": {
-    "version": "5.0.0",
+    "version": "6.0.0",
     "datasetType": "synthetic-demo",
-    "description": "Turma fictícia completa para demonstração acadêmica do Alerta Evasão.",
+    "description": "Turma fictícia completa para demonstração acadêmica do Alerta Evasão. Eventos do AVA usam pseudônimos.",
     "students": 30,
     "subjects": 6
-  }
+  },
+  "activities": [
+    {
+      "id": "alg-at01",
+      "subjectId": "alg",
+      "title": "Atividade 1 de Raciocínio Algorítmico",
+      "dueDate": "2026-03-06"
+    },
+    {
+      "id": "alg-at02",
+      "subjectId": "alg",
+      "title": "Atividade 2 de Raciocínio Algorítmico",
+      "dueDate": "2026-03-13"
+    },
+    {
+      "id": "alg-at03",
+      "subjectId": "alg",
+      "title": "Atividade 3 de Raciocínio Algorítmico",
+      "dueDate": "2026-03-20"
+    },
+    {
+      "id": "alg-at04",
+      "subjectId": "alg",
+      "title": "Atividade 4 de Raciocínio Algorítmico",
+      "dueDate": "2026-03-27"
+    },
+    {
+      "id": "alg-at05",
+      "subjectId": "alg",
+      "title": "Atividade 5 de Raciocínio Algorítmico",
+      "dueDate": "2026-04-03"
+    },
+    {
+      "id": "alg-at06",
+      "subjectId": "alg",
+      "title": "Atividade 6 de Raciocínio Algorítmico",
+      "dueDate": "2026-04-10"
+    },
+    {
+      "id": "alg-at07",
+      "subjectId": "alg",
+      "title": "Atividade 7 de Raciocínio Algorítmico",
+      "dueDate": "2026-04-17"
+    },
+    {
+      "id": "alg-at08",
+      "subjectId": "alg",
+      "title": "Atividade 8 de Raciocínio Algorítmico",
+      "dueDate": "2026-04-24"
+    },
+    {
+      "id": "alg-at09",
+      "subjectId": "alg",
+      "title": "Atividade 9 de Raciocínio Algorítmico",
+      "dueDate": "2026-05-01"
+    },
+    {
+      "id": "alg-at10",
+      "subjectId": "alg",
+      "title": "Atividade 10 de Raciocínio Algorítmico",
+      "dueDate": "2026-05-08"
+    },
+    {
+      "id": "alg-at11",
+      "subjectId": "alg",
+      "title": "Atividade 11 de Raciocínio Algorítmico",
+      "dueDate": "2026-05-15"
+    },
+    {
+      "id": "alg-at12",
+      "subjectId": "alg",
+      "title": "Atividade 12 de Raciocínio Algorítmico",
+      "dueDate": "2026-05-22"
+    },
+    {
+      "id": "alg-at13",
+      "subjectId": "alg",
+      "title": "Atividade 13 de Raciocínio Algorítmico",
+      "dueDate": "2026-05-29"
+    },
+    {
+      "id": "alg-at14",
+      "subjectId": "alg",
+      "title": "Atividade 14 de Raciocínio Algorítmico",
+      "dueDate": "2026-06-05"
+    },
+    {
+      "id": "alg-at15",
+      "subjectId": "alg",
+      "title": "Atividade 15 de Raciocínio Algorítmico",
+      "dueDate": "2026-06-12"
+    },
+    {
+      "id": "alg-at16",
+      "subjectId": "alg",
+      "title": "Atividade 16 de Raciocínio Algorítmico",
+      "dueDate": "2026-06-19"
+    },
+    {
+      "id": "exp-at01",
+      "subjectId": "exp",
+      "title": "Atividade 1 de Experiência Criativa",
+      "dueDate": "2026-03-06"
+    },
+    {
+      "id": "exp-at02",
+      "subjectId": "exp",
+      "title": "Atividade 2 de Experiência Criativa",
+      "dueDate": "2026-03-13"
+    },
+    {
+      "id": "exp-at03",
+      "subjectId": "exp",
+      "title": "Atividade 3 de Experiência Criativa",
+      "dueDate": "2026-03-20"
+    },
+    {
+      "id": "exp-at04",
+      "subjectId": "exp",
+      "title": "Atividade 4 de Experiência Criativa",
+      "dueDate": "2026-03-27"
+    },
+    {
+      "id": "exp-at05",
+      "subjectId": "exp",
+      "title": "Atividade 5 de Experiência Criativa",
+      "dueDate": "2026-04-03"
+    },
+    {
+      "id": "exp-at06",
+      "subjectId": "exp",
+      "title": "Atividade 6 de Experiência Criativa",
+      "dueDate": "2026-04-10"
+    },
+    {
+      "id": "exp-at07",
+      "subjectId": "exp",
+      "title": "Atividade 7 de Experiência Criativa",
+      "dueDate": "2026-04-17"
+    },
+    {
+      "id": "exp-at08",
+      "subjectId": "exp",
+      "title": "Atividade 8 de Experiência Criativa",
+      "dueDate": "2026-04-24"
+    },
+    {
+      "id": "exp-at09",
+      "subjectId": "exp",
+      "title": "Atividade 9 de Experiência Criativa",
+      "dueDate": "2026-05-01"
+    },
+    {
+      "id": "exp-at10",
+      "subjectId": "exp",
+      "title": "Atividade 10 de Experiência Criativa",
+      "dueDate": "2026-05-08"
+    },
+    {
+      "id": "exp-at11",
+      "subjectId": "exp",
+      "title": "Atividade 11 de Experiência Criativa",
+      "dueDate": "2026-05-15"
+    },
+    {
+      "id": "exp-at12",
+      "subjectId": "exp",
+      "title": "Atividade 12 de Experiência Criativa",
+      "dueDate": "2026-05-22"
+    },
+    {
+      "id": "exp-at13",
+      "subjectId": "exp",
+      "title": "Atividade 13 de Experiência Criativa",
+      "dueDate": "2026-05-29"
+    },
+    {
+      "id": "exp-at14",
+      "subjectId": "exp",
+      "title": "Atividade 14 de Experiência Criativa",
+      "dueDate": "2026-06-05"
+    },
+    {
+      "id": "exp-at15",
+      "subjectId": "exp",
+      "title": "Atividade 15 de Experiência Criativa",
+      "dueDate": "2026-06-12"
+    },
+    {
+      "id": "exp-at16",
+      "subjectId": "exp",
+      "title": "Atividade 16 de Experiência Criativa",
+      "dueDate": "2026-06-19"
+    },
+    {
+      "id": "fil-at01",
+      "subjectId": "fil",
+      "title": "Atividade 1 de Filosofia",
+      "dueDate": "2026-03-06"
+    },
+    {
+      "id": "fil-at02",
+      "subjectId": "fil",
+      "title": "Atividade 2 de Filosofia",
+      "dueDate": "2026-03-20"
+    },
+    {
+      "id": "fil-at03",
+      "subjectId": "fil",
+      "title": "Atividade 3 de Filosofia",
+      "dueDate": "2026-04-03"
+    },
+    {
+      "id": "fil-at04",
+      "subjectId": "fil",
+      "title": "Atividade 4 de Filosofia",
+      "dueDate": "2026-04-17"
+    },
+    {
+      "id": "fil-at05",
+      "subjectId": "fil",
+      "title": "Atividade 5 de Filosofia",
+      "dueDate": "2026-05-01"
+    },
+    {
+      "id": "fil-at06",
+      "subjectId": "fil",
+      "title": "Atividade 6 de Filosofia",
+      "dueDate": "2026-05-15"
+    },
+    {
+      "id": "fil-at07",
+      "subjectId": "fil",
+      "title": "Atividade 7 de Filosofia",
+      "dueDate": "2026-05-29"
+    },
+    {
+      "id": "fil-at08",
+      "subjectId": "fil",
+      "title": "Atividade 8 de Filosofia",
+      "dueDate": "2026-06-12"
+    },
+    {
+      "id": "dec-at01",
+      "subjectId": "dec",
+      "title": "Atividade 1 de Descoberta da Computação",
+      "dueDate": "2026-03-06"
+    },
+    {
+      "id": "dec-at02",
+      "subjectId": "dec",
+      "title": "Atividade 2 de Descoberta da Computação",
+      "dueDate": "2026-03-20"
+    },
+    {
+      "id": "dec-at03",
+      "subjectId": "dec",
+      "title": "Atividade 3 de Descoberta da Computação",
+      "dueDate": "2026-04-03"
+    },
+    {
+      "id": "dec-at04",
+      "subjectId": "dec",
+      "title": "Atividade 4 de Descoberta da Computação",
+      "dueDate": "2026-04-17"
+    },
+    {
+      "id": "dec-at05",
+      "subjectId": "dec",
+      "title": "Atividade 5 de Descoberta da Computação",
+      "dueDate": "2026-05-01"
+    },
+    {
+      "id": "dec-at06",
+      "subjectId": "dec",
+      "title": "Atividade 6 de Descoberta da Computação",
+      "dueDate": "2026-05-15"
+    },
+    {
+      "id": "dec-at07",
+      "subjectId": "dec",
+      "title": "Atividade 7 de Descoberta da Computação",
+      "dueDate": "2026-05-29"
+    },
+    {
+      "id": "dec-at08",
+      "subjectId": "dec",
+      "title": "Atividade 8 de Descoberta da Computação",
+      "dueDate": "2026-06-12"
+    },
+    {
+      "id": "mod-at01",
+      "subjectId": "mod",
+      "title": "Atividade 1 de Modelagem Física",
+      "dueDate": "2026-03-06"
+    },
+    {
+      "id": "mod-at02",
+      "subjectId": "mod",
+      "title": "Atividade 2 de Modelagem Física",
+      "dueDate": "2026-03-13"
+    },
+    {
+      "id": "mod-at03",
+      "subjectId": "mod",
+      "title": "Atividade 3 de Modelagem Física",
+      "dueDate": "2026-03-20"
+    },
+    {
+      "id": "mod-at04",
+      "subjectId": "mod",
+      "title": "Atividade 4 de Modelagem Física",
+      "dueDate": "2026-03-27"
+    },
+    {
+      "id": "mod-at05",
+      "subjectId": "mod",
+      "title": "Atividade 5 de Modelagem Física",
+      "dueDate": "2026-04-03"
+    },
+    {
+      "id": "mod-at06",
+      "subjectId": "mod",
+      "title": "Atividade 6 de Modelagem Física",
+      "dueDate": "2026-04-10"
+    },
+    {
+      "id": "mod-at07",
+      "subjectId": "mod",
+      "title": "Atividade 7 de Modelagem Física",
+      "dueDate": "2026-04-17"
+    },
+    {
+      "id": "mod-at08",
+      "subjectId": "mod",
+      "title": "Atividade 8 de Modelagem Física",
+      "dueDate": "2026-04-24"
+    },
+    {
+      "id": "mod-at09",
+      "subjectId": "mod",
+      "title": "Atividade 9 de Modelagem Física",
+      "dueDate": "2026-05-01"
+    },
+    {
+      "id": "mod-at10",
+      "subjectId": "mod",
+      "title": "Atividade 10 de Modelagem Física",
+      "dueDate": "2026-05-08"
+    },
+    {
+      "id": "mod-at11",
+      "subjectId": "mod",
+      "title": "Atividade 11 de Modelagem Física",
+      "dueDate": "2026-05-15"
+    },
+    {
+      "id": "mod-at12",
+      "subjectId": "mod",
+      "title": "Atividade 12 de Modelagem Física",
+      "dueDate": "2026-05-22"
+    },
+    {
+      "id": "mod-at13",
+      "subjectId": "mod",
+      "title": "Atividade 13 de Modelagem Física",
+      "dueDate": "2026-05-29"
+    },
+    {
+      "id": "mod-at14",
+      "subjectId": "mod",
+      "title": "Atividade 14 de Modelagem Física",
+      "dueDate": "2026-06-05"
+    },
+    {
+      "id": "mod-at15",
+      "subjectId": "mod",
+      "title": "Atividade 15 de Modelagem Física",
+      "dueDate": "2026-06-12"
+    },
+    {
+      "id": "mod-at16",
+      "subjectId": "mod",
+      "title": "Atividade 16 de Modelagem Física",
+      "dueDate": "2026-06-19"
+    },
+    {
+      "id": "lea-at01",
+      "subjectId": "lea",
+      "title": "Atividade 1 de Leitura e Escrita",
+      "dueDate": "2026-03-06"
+    },
+    {
+      "id": "lea-at02",
+      "subjectId": "lea",
+      "title": "Atividade 2 de Leitura e Escrita",
+      "dueDate": "2026-03-20"
+    },
+    {
+      "id": "lea-at03",
+      "subjectId": "lea",
+      "title": "Atividade 3 de Leitura e Escrita",
+      "dueDate": "2026-04-03"
+    },
+    {
+      "id": "lea-at04",
+      "subjectId": "lea",
+      "title": "Atividade 4 de Leitura e Escrita",
+      "dueDate": "2026-04-17"
+    },
+    {
+      "id": "lea-at05",
+      "subjectId": "lea",
+      "title": "Atividade 5 de Leitura e Escrita",
+      "dueDate": "2026-05-01"
+    },
+    {
+      "id": "lea-at06",
+      "subjectId": "lea",
+      "title": "Atividade 6 de Leitura e Escrita",
+      "dueDate": "2026-05-15"
+    },
+    {
+      "id": "lea-at07",
+      "subjectId": "lea",
+      "title": "Atividade 7 de Leitura e Escrita",
+      "dueDate": "2026-05-29"
+    },
+    {
+      "id": "lea-at08",
+      "subjectId": "lea",
+      "title": "Atividade 8 de Leitura e Escrita",
+      "dueDate": "2026-06-12"
+    }
+  ]
 }

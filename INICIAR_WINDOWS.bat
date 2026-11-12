@@ -2,7 +2,7 @@
 chcp 65001 > nul
 cd /d "%~dp0"
 echo ========================================
-echo      ALERTA EVASAO V5 - INICIAR
+echo      ALERTA EVASAO V6 - INICIAR
 echo ========================================
 echo.
 where node >nul 2>nul
@@ -39,5 +39,5 @@ call npm run check:data
 echo.
 echo Abrindo http://localhost:3000
 start "" http://localhost:3000
-call npm run dev
+call npm start
 pause

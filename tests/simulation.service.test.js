@@ -1,10 +1,11 @@
+require('./helpers/temp-data');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const repository = require('../src/repositories/academic.repository');
 const simulation = require('../src/services/simulation.service');
 const academic = require('../src/services/academic.service');
 
-test('V5 simula semestre com seis matérias, 5 aulas por dia e resumo visual do avanço', () => {
+test('simula semestre com seis matérias, 5 aulas por dia e resumo visual do avanço', () => {
   repository.resetData();
   try {
     const start = simulation.getStatus();
@@ -42,7 +43,7 @@ test('V5 simula semestre com seis matérias, 5 aulas por dia e resumo visual do 
   }
 });
 
-test('V5 completa o semestre e libera todas as RAs para todos os 30 alunos', () => {
+test('completa o semestre e libera todas as RAs para todos os 30 alunos', () => {
   repository.resetData();
   try {
     const start = simulation.getStatus();
@@ -53,7 +54,8 @@ test('V5 completa o semestre e libera todas as RAs para todos os 30 alunos', () 
 
     const data = repository.readData();
     assert.equal(data.students.length, 30);
-    assert.ok(data.notifications.length > 0, 'O semestre deve gerar alertas proativos.');
+    assert.ok(data.notifications.length > 0, 'O semestre deve gerar sugestões proativas.');
+    assert.ok(data.notifications.every((n) => n.status === 'pending_review' && !n.sentAt), 'Nenhuma sugestão pode ser enviada sem revisão humana.');
 
     for (const enrollment of data.enrollments) {
       const subject = data.subjects.find((item) => item.id === enrollment.subjectId);
@@ -70,7 +72,7 @@ test('V5 completa o semestre e libera todas as RAs para todos os 30 alunos', () 
   }
 });
 
-test('anti-spam limita comunicações repetidas por faixa e consolida sinais simultâneos', () => {
+test('anti-spam limita sugestões repetidas por faixa e consolida sinais simultâneos', () => {
   repository.resetData();
   try {
     simulation.advance(90);

@@ -1,6 +1,8 @@
 const repository = require('../repositories/academic.repository');
 const academic = require('./academic.service');
 const notificationService = require('./notification.service');
+const avaRules = require('./ava-rules');
+const avaService = require('./ava.service');
 
 const DAY = 86400000;
 
@@ -39,22 +41,7 @@ function absenceRate(student, subjectId, date) {
   return base;
 }
 
-function accessChance(student, date) {
-  let chance = {
-    stable: 0.58,
-    attendance_risk: 0.42,
-    exam_difficulty: 0.56,
-    project_difficulty: 0.44,
-    ava_disengagement: 0.30,
-    mixed_risk: 0.34
-  }[student.archetype] ?? 0.42;
-
-  if (student.archetype === 'ava_disengagement' && compareDate(date, '2026-04-20') >= 0) chance = 0.07;
-  if (student.focus && compareDate(date, '2026-05-10') >= 0 && compareDate(date, '2026-06-01') < 0) chance = 0.01;
-  return chance;
-}
-
-function simulateOneDay(data, date) {
+function simulateOneDay(data, date, ctx) {
   const d = parseDate(date);
   const day = d.getUTCDay();
   const schedule = data.timetable.find((item) => item.day === day);
@@ -71,26 +58,135 @@ function simulateOneDay(data, date) {
     });
   }
 
-  // AVA: o acesso é tratado como atividade geral do estudante na plataforma.
-  // Quando há login, todas as disciplinas recebem o mesmo último acesso; pendências continuam por matéria.
+  simulateAvaDay(data, date, ctx);
+}
+
+// Cada aluno estuda cada disciplina em ~3 dias fixos da semana; a "regularidade" é a chance
+// de manter esse hábito. Isso deixa a série semanal realista (pouco ruído para quem é regular).
+const STUDY_REGULARITY = { stable: 0.95, attendance_risk: 0.82, exam_difficulty: 0.9, project_difficulty: 0.82, ava_disengagement: 0.6, mixed_risk: 0.65 };
+const DELIVERY_CHANCE = { stable: 0.9, attendance_risk: 0.6, exam_difficulty: 0.8, project_difficulty: 0.45, ava_disengagement: 0.3, mixed_risk: 0.35 };
+
+function studyDays(student, subjectId) {
+  const days = [];
+  for (let weekday = 0; weekday < 7 && days.length < 3; weekday += 1) {
+    if (hashFloat(`${student.id}|${subjectId}|studyday|${weekday}`) < 0.45) days.push(weekday);
+  }
+  while (days.length < 3) days.push(Math.floor(hashFloat(`${student.id}|${subjectId}|extra|${days.length}`) * 7));
+  return new Set(days);
+}
+
+function studyRegularity(student, date) {
+  if (student.focus && compareDate(date, '2026-05-10') >= 0 && compareDate(date, '2026-06-01') < 0) return 0;
+  if (student.archetype === 'ava_disengagement' && compareDate(date, '2026-04-20') >= 0) return 0.15;
+  return STUDY_REGULARITY[student.archetype] ?? 0.8;
+}
+const BROWSE_TYPES = ['acesso', 'material', 'forum'];
+const DUPLICATE_EXPORT_CHANCE = 0.03;
+
+/** Contexto mantido durante um avanço: eventos novos e entregas já feitas. */
+function buildAvaContext(data) {
+  const existing = repository.readEvents();
+  const delivered = new Set();
+  for (const event of existing) if (event.tipo === 'entrega') delivered.add(`${event.aluno}|${event.atividade}`);
+  return { newEvents: [], delivered, deliveries: new Map() };
+}
+
+function incidentFor(data, date) {
+  return (data.simulation.collectionIncidents || []).filter((item) => compareDate(date, item.from) >= 0 && compareDate(date, item.to) <= 0);
+}
+
+function forcedAccess(student, date) {
+  return Boolean(student.focus && (date === '2026-05-09' || date === '2026-06-01'));
+}
+
+/**
+ * Simula a atividade real dos alunos no AVA e a exportação diária para o sistema.
+ * O que o sistema enxerga são apenas os eventos exportados; dias de falha de coleta
+ * perdem os eventos e ficam registrados no log da coleta.
+ */
+function simulateAvaDay(data, date, ctx) {
+  const incidents = incidentFor(data, date);
+  const exportFailure = incidents.find((item) => item.type === 'export_failure');
+  const silentSubjects = new Set(incidents.filter((item) => item.type === 'silent_gap').map((item) => item.subjectId));
+  data.simulation.collectionLog ||= [];
+  data.simulation.collectionLog = data.simulation.collectionLog.filter((item) => item.date !== date);
+  data.simulation.collectionLog.push(exportFailure
+    ? { date, status: 'falha', note: exportFailure.note }
+    : { date, status: 'ok', note: null });
+
+  const activitiesBySubject = new Map();
+  for (const activity of data.activities || []) {
+    if (!activitiesBySubject.has(activity.subjectId)) activitiesBySubject.set(activity.subjectId, []);
+    activitiesBySubject.get(activity.subjectId).push(activity);
+  }
+
   data.students.forEach((student) => {
-    const chance = accessChance(student, date);
-    const accessed = hashFloat(`${student.id}|${date}|ava-global`) < chance;
-    const studentEnrollments = data.enrollments.filter((e) => e.studentId === student.id);
-    if (accessed) {
-      studentEnrollments.forEach((e) => { e.lastAvaAccess = date; });
-      const pending = studentEnrollments.filter((e) => e.pendingActivities > 0);
-      if (pending.length && hashFloat(`${student.id}|${date}|resolve`) < 0.35) {
-        const target = pending[Math.floor(hashFloat(`${student.id}|${date}|which-pending`) * pending.length)];
-        target.pendingActivities -= 1;
+    const weekday = (parseDate(date).getUTCDay() + 6) % 7;
+    const regularity = studyRegularity(student, date);
+    const dayEvents = [];
+    let counter = 0;
+    const makeEvent = (subjectId, tipo, extra = {}) => {
+      counter += 1;
+      return { id: `ev-${date}-${student.pseudoId}-${subjectId}-${counter}`, aluno: student.pseudoId, disciplina: subjectId, data: date, tipo, origem: 'exportacao-diaria', ...extra };
+    };
+
+    data.subjects.forEach((subject) => {
+      const studies = (studyDays(student, subject.id).has(weekday) && hashFloat(`${student.id}|${subject.id}|${date}|study`) < regularity)
+        || forcedAccess(student, date);
+      if (!studies) return;
+      {
+        const count = 2 + Math.floor(hashFloat(`${student.id}|${subject.id}|${date}|count`) * 2);
+        for (let i = 0; i < count; i += 1) {
+          dayEvents.push(makeEvent(subject.id, BROWSE_TYPES[Math.floor(hashFloat(`${student.id}|${subject.id}|${date}|type|${i}`) * 3)]));
+        }
       }
-    } else if (day === 1) {
-      const subject = data.subjects[Math.floor(hashFloat(`${student.id}|${date}|pending-subject`) * data.subjects.length)];
-      const e = enrollment(data, student.id, subject.id);
-      const p = student.archetype === 'ava_disengagement' ? 0.48 : student.archetype === 'mixed_risk' ? 0.24 : 0.08;
-      if (e && hashFloat(`${student.id}|${subject.id}|${date}|pending`) < p) e.pendingActivities = Math.min(6, e.pendingActivities + 1);
-    }
+      // Entregas: atividade aberta (até 6 dias antes do prazo) ou atrasada há até 21 dias.
+      const isReturn = student.focus && date === '2026-06-01';
+      const open = (activitiesBySubject.get(subject.id) || [])
+        .filter((activity) => !ctx.delivered.has(`${student.pseudoId}|${activity.id}`))
+        .filter((activity) => compareDate(date, addDays(activity.dueDate, -6)) >= 0 && compareDate(date, addDays(activity.dueDate, 21)) <= 0)
+        .sort((a, b) => compareDate(a.dueDate, b.dueDate));
+      open.forEach((activity, index) => {
+        const late = compareDate(date, activity.dueDate) > 0;
+        let chance = (DELIVERY_CHANCE[student.archetype] ?? 0.5) * (late ? 0.6 : 1);
+        if (isReturn) chance = subject.id === 'exp' && index === open.length - 1 ? 0 : 1; // retoma, mas deixa 1 pendência
+        if (hashFloat(`${student.id}|${activity.id}|${date}|deliver`) < chance) {
+          ctx.delivered.add(`${student.pseudoId}|${activity.id}`);
+          dayEvents.push(makeEvent(subject.id, 'entrega', { atividade: activity.id }));
+        }
+      });
+    });
+    if (!dayEvents.length) return;
+
+    // Aluno ainda sem histórico vinculado ao AVA: a atividade existe, mas o sistema não a recebe.
+    if (student.avaHistoryFrom && compareDate(date, student.avaHistoryFrom) < 0) return;
+    if (exportFailure) return;
+
+    const exported = dayEvents.filter((event) => !silentSubjects.has(event.disciplina));
+    exported.forEach((event) => {
+      ctx.newEvents.push(event);
+      // Reexportação ocasional do mesmo evento: o agregador precisa contar uma vez pelo ID.
+      if (hashFloat(`${event.id}|dup`) < DUPLICATE_EXPORT_CHANCE) ctx.newEvents.push({ ...event });
+    });
+    if (exported.length) data.enrollments.filter((e) => e.studentId === student.id).forEach((e) => { e.lastAvaAccess = date; });
   });
+}
+
+/** Atualiza o contador de pendências a partir de prazos e entregas conhecidas. */
+function refreshPending(data, date, ctx) {
+  const allEvents = [...repository.readEvents(), ...ctx.newEvents];
+  const deliveriesByStudent = new Map();
+  for (const event of allEvents) {
+    if (event.tipo !== 'entrega') continue;
+    if (!deliveriesByStudent.has(event.aluno)) deliveriesByStudent.set(event.aluno, []);
+    deliveriesByStudent.get(event.aluno).push(event);
+  }
+  for (const enrollmentItem of data.enrollments) {
+    const student = studentById(data, enrollmentItem.studentId);
+    if (student.avaHistoryFrom && compareDate(date, student.avaHistoryFrom) < 0) { enrollmentItem.pendingActivities = 0; continue; }
+    const activities = (data.activities || []).filter((a) => a.subjectId === enrollmentItem.subjectId);
+    enrollmentItem.pendingActivities = avaRules.pendingFromDeadlines(activities, deliveriesByStudent.get(student.pseudoId) || [], date).count;
+  }
 }
 
 function componentGrade(student, subject, ra, component, index) {
@@ -181,7 +277,6 @@ function applyFocusStory(data, from, to) {
   const required = classData.requiredAttendance || 75;
   const fil = subjectById(data,'fil');
   const filE = enrollment(data,s.id,'fil');
-  const expE = enrollment(data,s.id,'exp');
 
   if (betweenExclusiveInclusive('2026-04-20', from, to)) {
     filE.absences = Math.max(filE.absences, allowedAbsences(fil,required)-5);
@@ -192,18 +287,15 @@ function applyFocusStory(data, from, to) {
     appendLog(data,{date:'2026-05-11',kind:'threshold',tone:'danger',studentId:s.id,title:`${s.name}: restam somente 2 faltas em Filosofia`,detail:'O alerta de frequência evoluiu de lembrete para atenção.'});
   }
 
-  // Demonstra uma queda de engajamento geral no AVA ao longo do tempo.
-  if (compareDate(to,'2026-05-10') >= 0 && compareDate(to,'2026-06-01') < 0) {
-    data.enrollments.filter((e)=>e.studentId===s.id).forEach((e)=>{ e.lastAvaAccess='2026-05-09'; });
-    expE.pendingActivities = Math.max(expE.pendingActivities,3);
-  }
+  // A queda de engajamento no AVA da aluna-foco vem da própria simulação de acesso
+  // (sem acesso entre 10/05 e 31/05); aqui só registramos os marcos na linha do tempo.
   if (betweenExclusiveInclusive('2026-05-25', from, to)) {
-    appendLog(data,{date:'2026-05-25',kind:'ava',tone:'danger',studentId:s.id,title:`${s.name}: 16 dias sem acessar o AVA`,detail:'O período sem acesso, junto de atividades pendentes, elevou o alerta de engajamento.'});
+    const last = data.enrollments.find((e) => e.studentId === s.id)?.lastAvaAccess;
+    const days = last ? Math.round((parseDate('2026-05-25') - parseDate(last)) / DAY) : null;
+    appendLog(data,{date:'2026-05-25',kind:'ava',tone:'danger',studentId:s.id,title:`${s.name}: ${days ?? '?'} dias sem acessar o AVA`,detail:'Sem acesso e com atividades vencidas: o sistema preparou uma sugestão de apoio para revisão.'});
   }
   if (betweenExclusiveInclusive('2026-06-01', from, to)) {
-    data.enrollments.filter((e)=>e.studentId===s.id).forEach((e)=>{ e.lastAvaAccess='2026-06-01'; });
-    expE.pendingActivities = 1;
-    appendLog(data,{date:'2026-06-01',kind:'intervention',tone:'success',studentId:s.id,title:`${s.name}: retomou o AVA após o alerta`,detail:'Acesso registrado e pendências reduzidas. O sistema recalcula automaticamente o nível de atenção.'});
+    appendLog(data,{date:'2026-06-01',kind:'intervention',tone:'success',studentId:s.id,title:`${s.name}: retomou o AVA`,detail:'Acesso registrado e entregas atrasadas feitas. O nível de atenção é recalculado automaticamente.'});
   }
 }
 
@@ -211,60 +303,54 @@ function eventFingerprint(candidate) {
   return [candidate.studentId,candidate.subjectId,candidate.type,candidate.level,candidate.reference||''].join('|');
 }
 
+/**
+ * Gera SUGESTÕES de apoio para revisão humana. Nada é enviado ao aluno:
+ * cada sugestão fica com status `pending_review` até um responsável aceitar,
+ * ajustar ou descartar (ver POST /api/notifications/:id/review).
+ */
 function autoNotifications(data, date) {
   repository.writeData(data);
-  const fresh = repository.readData();
+  const fresh = repository.readDataForUpdate();
   fresh.simulation.notificationFingerprints ||= [];
   const created=[];
 
   for (const student of fresh.students) {
     const profile = academic.getStudentProfile(student.id, parseDate(date));
-    const rawCandidates=[];
+    const weekly = avaService.getStudentWeekly(student.id, { referenceDate: date });
+    const rawCandidates = notificationService.buildCandidates(student, profile, weekly);
 
-    // Frequência e nota são específicas por disciplina.
-    for (const analysis of profile.subjects) {
-      const attendance=notificationService.buildAttendanceNotification(student,analysis);
-      const grade=notificationService.buildGradeNotification(student,analysis);
-      if(attendance) rawCandidates.push({...attendance,studentId:student.id,subjectId:analysis.subject.id});
-      if(grade) rawCandidates.push({...grade,studentId:student.id,subjectId:analysis.subject.id});
-    }
-
-    // AVA é um comportamento geral: no máximo um sinal por faixa, usando a matéria com mais pendências como contexto.
-    const avaContext=[...profile.subjects].sort((a,b)=>(b.ava.pendingActivities-a.ava.pendingActivities)||(b.ava.inactiveDays-a.ava.inactiveDays))[0];
-    const ava=avaContext ? notificationService.buildAvaNotification(student,avaContext) : null;
-    if(ava) rawCandidates.push({...ava,studentId:student.id,subjectId:avaContext.subject.id});
-
-    // Anti-spam: elimina sinais que já foram comunicados e, se vários surgirem
-    // no mesmo avanço, consolida tudo em um único e-mail-resumo.
+    // Anti-spam: elimina sinais que já viraram sugestão e, se vários surgirem
+    // no mesmo avanço, consolida tudo em uma única sugestão-resumo.
     const candidates=rawCandidates.filter((candidate)=>!fresh.simulation.notificationFingerprints.includes(eventFingerprint(candidate)));
     if(!candidates.length) continue;
 
     const notification=notificationService.buildDigestNotification(student,candidates,date);
     if(!notification) continue;
 
-    // Cooldown anti-spam: lembretes/atenções aguardam pelo menos 5 dias desde
-    // a última comunicação do aluno. Alertas críticos podem furar o cooldown.
+    // Cooldown: lembretes/atenções aguardam ao menos 5 dias desde a última sugestão
+    // do aluno. Situações críticas entram na fila imediatamente.
     const previous=[...(fresh.notifications||[])]
-      .filter((item)=>item.studentId===student.id && item.sentAt)
-      .sort((a,b)=>String(b.sentAt).localeCompare(String(a.sentAt)))[0];
-    const daysSinceLast=previous ? Math.floor((parseDate(date)-parseDate(String(previous.sentAt).slice(0,10)))/DAY) : Infinity;
+      .filter((item)=>item.studentId===student.id && item.simulatedDate)
+      .sort((a,b)=>String(b.simulatedDate).localeCompare(String(a.simulatedDate)))[0];
+    const daysSinceLast=previous ? Math.floor((parseDate(date)-parseDate(previous.simulatedDate))/DAY) : Infinity;
     if(notification.level!=='critical' && daysSinceLast<5) continue;
 
-    // Todos os sinais incluídos no resumo são marcados como comunicados.
     candidates.forEach((candidate)=>fresh.simulation.notificationFingerprints.push(eventFingerprint(candidate)));
 
     const n={
-      id:`n${Date.now()}${created.length}`,
-      createdAt:`${date}T12:00:00.000Z`,
-      sentAt:`${date}T12:00:00.000Z`,
-      status:'auto_sent_simulated',
+      id:`n${date.replace(/-/g,'')}${student.id}${created.length}`,
+      createdAt:new Date().toISOString(),
+      simulatedDate:date,
+      status:'pending_review',
+      origin:'automatic_suggestion',
       to:student.email,
       studentId:student.id,
       subjectId:notification.subjectId || candidates[0]?.subjectId || null,
+      evidence:notificationService.buildEvidence(weekly, candidates),
       ...notification
     };
     fresh.notifications.unshift(n); created.push(n);
-    if (student.focus) appendLog(fresh,{date,kind:'notification',tone:notification.level==='critical'?'danger':'warning',studentId:student.id,title:`E-mail automático • ${notification.subject}`,detail:notification.body});
+    if (student.focus) appendLog(fresh,{date,kind:'notification',tone:notification.level==='critical'?'danger':'warning',studentId:student.id,title:`Sugestão de apoio aguardando revisão: ${notification.subject}`,detail:'Nada foi enviado. Um responsável precisa aceitar, ajustar ou descartar.'});
   }
 
   repository.writeData(fresh);
@@ -301,7 +387,7 @@ function getStatus() {
 }
 
 function advance(days=7) {
-  let data=repository.readData();
+  let data=repository.readDataForUpdate();
   const from=data.simulation.currentDate;
   const maxDate=data.simulation.endDate;
   let to=addDays(from,days);
@@ -311,11 +397,14 @@ function advance(days=7) {
   const previousLogIds=new Set((data.simulation.activityLog||[]).map((item)=>item.id));
   const previousNotificationIds=new Set((data.notifications||[]).map((item)=>item.id));
 
+  const ctx=buildAvaContext(data);
   let cursor=addDays(from,1);
   while (compareDate(cursor,to)<=0) {
-    simulateOneDay(data,cursor);
+    simulateOneDay(data,cursor,ctx);
     cursor=addDays(cursor,1);
   }
+  refreshPending(data,to,ctx);
+  repository.appendEvents(ctx.newEvents);
   processCalendarEvents(data,from,to);
   applyFocusStory(data,from,to);
   data.simulation.currentDate=to;

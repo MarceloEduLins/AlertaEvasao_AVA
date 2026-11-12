@@ -1,3 +1,4 @@
+require('./helpers/temp-data');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
@@ -43,7 +44,7 @@ test('classifica inatividade no AVA com data de referência explícita', () => {
   assert.equal(result.alertLevel, 'attention');
 });
 
-test('gera e-mail curto quando restam 5 faltas', () => {
+test('gera mensagem curta quando restam 5 faltas', () => {
   const message = buildAttendanceNotification(
     { name: 'João Silva' },
     {
@@ -83,7 +84,7 @@ test('média acadêmica de referência é 7,0 e nota 6,8 já gera lembrete preve
   assert.match(message.body, /7,0/);
 });
 
-test('vários sinais simultâneos são consolidados em um único e-mail-resumo', () => {
+test('vários sinais simultâneos são consolidados em uma única sugestão-resumo', () => {
   const student = { name: 'Ana Ribeiro' };
   const digest = buildDigestNotification(student, [
     { type: 'grade', level: 'reminder', reference: 'RA1:x', subjectId: 'alg', summary: 'RA1 = 6,8' },
@@ -92,5 +93,6 @@ test('vários sinais simultâneos são consolidados em um único e-mail-resumo',
   assert.equal(digest.type, 'digest');
   assert.equal(digest.level, 'attention');
   assert.equal(digest.sourceReferences.length, 2);
-  assert.match(digest.body, /Você não receberá outro e-mail/);
+  assert.match(digest.body, /tutoria/);
+  assert.match(digest.body, /RA1 = 6,8/);
 });

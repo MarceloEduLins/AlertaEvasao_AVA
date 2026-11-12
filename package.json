@@ -1,8 +1,8 @@
 {
   "name": "alerta-evasao",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "private": true,
-  "description": "Sistema demonstrativo de monitoramento acadêmico preventivo com turma completa, simulação temporal visual, alertas proativos anti-spam e clustering K-Means com projeção PCA.",
+  "description": "Sugestões de apoio revisáveis a partir de eventos do AVA: agregados semanais com deduplicação, completude da coleta, pendências por prazo e revisão humana. Dados sintéticos.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -21,5 +21,13 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "src/data/*.json",
+      "src/data/*.tmp",
+      "tests/*",
+      "docs/*"
+    ]
   }
 }

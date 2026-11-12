@@ -1,4 +1,4 @@
-# Regras de negócio — V5
+# Regras de negócio — v6
 
 ## Referências do protótipo
 
@@ -17,13 +17,13 @@ A margem usa a carga total prevista da disciplina:
 - 1 a 2: atenção;
 - 0 ou margem negativa: crítico.
 
-Uma mesma faixa só é comunicada uma vez por disciplina.
+Uma mesma faixa só gera sugestão uma vez por disciplina.
 
 ## Desempenho
 
 Cada RA pode ter componentes e pesos diferentes.
 
-- nota >= 7,0: sem e-mail de desempenho;
+- nota >= 7,0: sem sugestão de desempenho;
 - 6,0–6,9: lembrete preventivo;
 - 5,0–5,9: atenção;
 - abaixo de 5,0: crítico.
@@ -37,16 +37,30 @@ O sistema também mostra o componente mais fraco da RA (por exemplo, prova ou pr
 - 8–14 dias: atenção;
 - 15+ dias: crítico.
 
-O e-mail de AVA é geral por aluno e usa como contexto a disciplina com mais pendências.
+O sinal de inatividade no AVA é geral por aluno e usa como contexto a disciplina com mais pendências.
+
+## Atividade semanal no AVA (v6)
+
+Detalhes completos em `docs/contrato_dados.md`.
+
+- semana = segunda a domingo; comparação das **duas últimas semanas completas**;
+- eventos contados uma vez por ID; dois eventos no mesmo dia = 2 eventos e 1 dia ativo;
+- **queda de atividade**: semana anterior com ao menos 5 eventos e semana atual com no máximo 50% deles;
+- **atividade pendente**: prazo vencido (até 21 dias) sem entrega;
+- semana fora do semestre, antes do histórico do aluno, com coleta incompleta ou com a turma sem eventos na disciplina → **dados incompletos**, sem sugestão automática.
+
+## Revisão humana (v6)
+
+Nenhuma mensagem é enviada pelo sistema. Toda sugestão fica "aguardando revisão" até um responsável **aceitar**, **ajustar** (texto final registrado) ou **descartar** (motivo obrigatório). A decisão não pode ser sobrescrita.
 
 ## Anti-spam
 
 - a mesma faixa de frequência não é repetida;
 - a mesma faixa de AVA não é repetida;
 - cada resultado de RA pode gerar um novo aviso porque é um evento acadêmico novo;
-- se vários sinais novos aparecem no mesmo avanço do calendário, eles são reunidos em **um único e-mail-resumo** para o aluno;
-- lembretes e avisos de atenção respeitam **cooldown mínimo de 5 dias**; alertas críticos podem ser enviados imediatamente;
-- um novo e-mail só surge quando existe um novo resultado ou mudança relevante de faixa.
+- se vários sinais novos aparecem no mesmo avanço do calendário, eles são reunidos em **uma única sugestão-resumo**;
+- lembretes e avisos de atenção respeitam **intervalo mínimo de 5 dias** desde a última sugestão do aluno; situações críticas entram na fila imediatamente;
+- uma nova sugestão só surge quando existe um novo resultado, mudança de faixa ou novo sinal semanal.
 
 ## Score de atenção
 

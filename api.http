@@ -55,3 +55,38 @@ Content-Type: application/json
 {
   "days": 7
 }
+
+### Sugestões aguardando revisão
+GET http://localhost:3000/api/notifications?status=pending
+
+### Registrar decisão humana (aceitar | ajustar | descartar). Nada é enviado.
+# Troque o ID por um retornado na chamada anterior.
+POST http://localhost:3000/api/notifications/ID_DA_SUGESTAO/review
+Content-Type: application/json
+
+{
+  "decision": "ajustar",
+  "reviewer": "Tutora Paula",
+  "note": "Mensagem mais curta",
+  "body": "Oi! Notei menos atividade no AVA esta semana. Podemos conversar?"
+}
+
+### Decisões registradas
+GET http://localhost:3000/api/reviews
+
+### Análise semanal do AVA de um aluno (agregados, coleta, pendências, sugestão)
+GET http://localhost:3000/api/students/s1/ava-weekly
+
+### Visão da coleta da turma
+GET http://localhost:3000/api/classes/cc1a/ava-overview
+
+### Eventos de origem de um agregado (rastreabilidade)
+GET http://localhost:3000/api/ava/events?studentId=s1&subjectId=alg&week=2026-05-04
+
+### Validar importação sem gravar
+POST http://localhost:3000/api/ava/events/import?dryRun=1
+Content-Type: application/json
+
+{
+  "csv": "id,aluno,disciplina,data,tipo,atividade\nimp-001,ps-53ad92,alg,2026-02-24,acesso,\nimp-001,ps-53ad92,alg,2026-02-24,acesso,\nimp-002,ps-53ad92,alg,2026-02-31,acesso,"
+}

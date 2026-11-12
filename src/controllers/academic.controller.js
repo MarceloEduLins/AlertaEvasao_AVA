@@ -4,6 +4,8 @@ const notifications = require('../services/notification.service');
 const { clusterClass, checkPython } = require('../services/clustering.service');
 const { validateAcademicData } = require('../services/data-validation.service');
 const simulation = require('../services/simulation.service');
+const ava = require('../services/ava.service');
+const avaRules = require('../services/ava-rules');
 
 
 async function getSystemStatus(_req, res) {
@@ -11,12 +13,12 @@ async function getSystemStatus(_req, res) {
   const ai = await checkPython();
   res.json({
     ok: dataCheck.ok,
-    version: repository.readData().meta?.version || '4.0.0',
+    version: repository.readData().meta?.version || '6.0.0',
     data: dataCheck,
     ai,
     notifications: {
-      mode: 'simulated',
-      description: 'As comunicações são geradas automaticamente e registradas no histórico demonstrativo.'
+      mode: 'human_review',
+      description: 'O sistema gera sugestões de apoio; nada é enviado. Um responsável aceita, ajusta ou descarta cada sugestão.'
     }
   });
 }
@@ -57,8 +59,17 @@ function updateSubject(req, res) {
     if (!Number.isInteger(pending) || pending < 0) return res.status(400).json({ message: 'Pendências inválidas.' });
     patch.pendingActivities = pending;
   }
-  if (req.body.lastAvaAccess !== undefined) patch.lastAvaAccess = String(req.body.lastAvaAccess);
-  if (req.body.assessments !== undefined) patch.assessments = req.body.assessments;
+  if (req.body.lastAvaAccess !== undefined) {
+    const value = String(req.body.lastAvaAccess);
+    const current = repository.readData().simulation.currentDate;
+    if (!avaRules.parseIsoDate(value)) return res.status(400).json({ message: 'Data de acesso ao AVA inválida. Use AAAA-MM-DD.' });
+    if (value > current) return res.status(400).json({ message: `O acesso ao AVA não pode ser posterior à data simulada (${current}).` });
+    patch.lastAvaAccess = value;
+  }
+  if (req.body.assessments !== undefined) {
+    return res.status(400).json({ message: 'Notas são liberadas pelo calendário da simulação e não podem ser alteradas por esta rota.' });
+  }
+  if (!Object.keys(patch).length) return res.status(400).json({ message: 'Nenhum campo válido para atualizar.' });
 
   repository.updateEnrollment(req.params.studentId, req.params.subjectId, patch);
   res.json(academic.getStudentProfile(req.params.studentId));
@@ -67,61 +78,117 @@ function updateSubject(req, res) {
 function previewNotifications(req, res) {
   const profile = academic.getStudentProfile(req.params.studentId);
   if (!profile) return res.status(404).json({ message: 'Estudante não encontrado.' });
-
-  const sent = repository.listNotifications().filter((item) => ['simulated_sent','auto_sent_simulated'].includes(item.status));
-  const alreadySent = (candidate) => sent.some((item) => {
-    if (item.studentId !== profile.student.id) return false;
-    if (Array.isArray(item.sourceReferences)) {
-      return item.sourceReferences.some((source) =>
-        source.type === candidate.type && source.subjectId === candidate.subjectId && source.level === candidate.level && (source.reference || '') === (candidate.reference || '')
-      );
-    }
-    return item.subjectId === candidate.subjectId && item.type === candidate.type && item.level === candidate.level && (item.reference || '') === (candidate.reference || '');
-  });
-
-  const candidates = [];
-  profile.subjects.forEach((subjectAnalysis) => {
-    const attendance = notifications.buildAttendanceNotification(profile.student, subjectAnalysis);
-    const grade = notifications.buildGradeNotification(profile.student, subjectAnalysis);
-    if (attendance) candidates.push({ ...attendance, studentId: profile.student.id, subjectId: subjectAnalysis.subject.id });
-    if (grade) candidates.push({ ...grade, studentId: profile.student.id, subjectId: subjectAnalysis.subject.id });
-  });
-  const avaContext = [...profile.subjects].sort((a,b)=>(b.ava.pendingActivities-a.ava.pendingActivities)||(b.ava.inactiveDays-a.ava.inactiveDays))[0];
-  const ava = avaContext ? notifications.buildAvaNotification(profile.student, avaContext) : null;
-  if (ava) candidates.push({ ...ava, studentId: profile.student.id, subjectId: avaContext.subject.id });
-
-  const fresh = candidates.filter((candidate) => !alreadySent(candidate));
-  if (!fresh.length) return res.json([]);
-  const date = academic.simulationReferenceDate().toISOString().slice(0, 10);
-  const digest = notifications.buildDigestNotification(profile.student, fresh, date);
-  res.json([{ ...digest, studentId: profile.student.id, subjectId: digest.subjectId || fresh[0]?.subjectId || null }]);
+  const weekly = ava.getStudentWeekly(profile.student.id);
+  const candidates = notifications.buildCandidates(profile.student, profile, weekly);
+  if (!candidates.length) return res.json([]);
+  const date = repository.readData().simulation.currentDate;
+  const digest = notifications.buildDigestNotification(profile.student, candidates, date);
+  res.json([{
+    ...digest,
+    studentId: profile.student.id,
+    subjectId: digest.subjectId || candidates[0]?.subjectId || null,
+    evidence: notifications.buildEvidence(weekly, candidates)
+  }]);
 }
 
 function generateNotification(req, res) {
-  const student = repository.getStudentById(req.body.studentId);
+  const student = repository.getStudentById(req.body?.studentId);
   if (!student) return res.status(404).json({ message: 'Estudante não encontrado.' });
+  const body = String(req.body.body || '').trim();
+  if (!body) return res.status(400).json({ message: 'A sugestão precisa de um texto de mensagem.' });
   const created = repository.addNotification({
+    origin: 'manual_preview',
     studentId: student.id,
     to: student.email,
     subjectId: req.body.subjectId || null,
     type: req.body.type || 'manual',
-    level: req.body.level || 'reminder',
+    level: ['reminder', 'attention', 'critical'].includes(req.body.level) ? req.body.level : 'reminder',
     reference: req.body.reference || null,
     sourceReferences: Array.isArray(req.body.sourceReferences) ? req.body.sourceReferences : undefined,
-    subject: String(req.body.subject || 'Alerta acadêmico'),
-    body: String(req.body.body || '')
+    subject: String(req.body.subject || 'Sugestão de apoio'),
+    summary: req.body.summary ? String(req.body.summary) : undefined,
+    evidence: req.body.evidence || null,
+    body
   });
   res.status(201).json(created);
 }
 
-function listNotifications(_req, res) {
-  res.json(repository.listNotifications());
+function listNotifications(req, res) {
+  let items = repository.listNotifications();
+  const { status, studentId } = req.query;
+  if (status === 'pending') items = items.filter((item) => item.status === 'pending_review');
+  else if (status === 'decided') items = items.filter((item) => item.review);
+  if (studentId) items = items.filter((item) => item.studentId === studentId);
+  res.json(items);
 }
 
-function simulateSend(req, res) {
-  const notification = repository.markNotificationSent(req.params.notificationId);
-  if (!notification) return res.status(404).json({ message: 'Notificação não encontrada.' });
-  res.json({ ...notification, message: 'Envio simulado. Integração SMTP/Nodemailer fica para a próxima etapa.' });
+const DECISIONS = ['aceitar', 'ajustar', 'descartar'];
+
+/** Registra a decisão humana sobre uma sugestão. Nenhuma mensagem é enviada. */
+function reviewNotification(req, res) {
+  const notification = repository.getNotification(req.params.notificationId);
+  if (!notification) return res.status(404).json({ message: 'Sugestão não encontrada.' });
+  const decision = String(req.body?.decision || '');
+  const reviewer = String(req.body?.reviewer || '').trim();
+  const note = String(req.body?.note || '').trim();
+  const editedBody = String(req.body?.body || '').trim();
+  if (!DECISIONS.includes(decision)) return res.status(400).json({ message: 'Decisão inválida. Use aceitar, ajustar ou descartar.' });
+  if (!reviewer) return res.status(400).json({ message: 'Informe o nome do responsável pela revisão.' });
+  if (reviewer.length > 80) return res.status(400).json({ message: 'O nome do responsável deve ter até 80 caracteres.' });
+  if (note.length > 500) return res.status(400).json({ message: 'A observação deve ter até 500 caracteres.' });
+  if (decision === 'ajustar' && !editedBody) return res.status(400).json({ message: 'Para ajustar, envie o texto revisado da mensagem.' });
+  if (decision === 'ajustar' && editedBody === String(notification.body || '').trim()) {
+    return res.status(400).json({ message: 'O texto ajustado é igual ao original. Use "aceitar" ou altere o texto.' });
+  }
+  if (decision === 'descartar' && !note) return res.status(400).json({ message: 'Informe o motivo do descarte.' });
+
+  const simulatedDate = repository.readData().simulation.currentDate;
+  const review = { decision, reviewer, note: note || null, decidedAt: new Date().toISOString(), simulatedDate };
+  const finalBody = decision === 'descartar' ? null : decision === 'ajustar' ? editedBody : notification.body;
+  const result = repository.saveReview(notification.id, review, finalBody);
+  if (result.error === 'already_reviewed') {
+    return res.status(409).json({ message: 'Esta sugestão já foi revisada; a decisão registrada não é sobrescrita.', notification: result.notification });
+  }
+  res.json({ ...result.notification, message: 'Decisão registrada. Nenhuma mensagem foi enviada pelo sistema.' });
+}
+
+function listReviews(_req, res) {
+  const items = repository.listNotifications()
+    .filter((item) => item.review)
+    .sort((a, b) => String(b.review.decidedAt).localeCompare(String(a.review.decidedAt)));
+  res.json(items);
+}
+
+function getStudentAvaWeekly(req, res) {
+  const result = ava.getStudentWeekly(req.params.studentId);
+  if (!result) return res.status(404).json({ message: 'Estudante não encontrado.' });
+  res.json({ ...result, history: ava.getStudentHistory(req.params.studentId) });
+}
+
+function getClassAvaOverview(req, res) {
+  if (!repository.getClassById(req.params.classId)) return res.status(404).json({ message: 'Turma não encontrada.' });
+  res.json(ava.getClassOverview(req.params.classId));
+}
+
+function listAvaEvents(req, res) {
+  const { studentId, subjectId, week } = req.query;
+  if (!studentId || !week) return res.status(400).json({ message: 'Informe studentId e week (segunda-feira, AAAA-MM-DD).' });
+  const result = ava.listSourceEvents({ studentId, subjectId, week });
+  if (!result) return res.status(404).json({ message: 'Estudante não encontrado.' });
+  if (result.error) return res.status(400).json({ message: result.error });
+  res.json(result);
+}
+
+function demoCsv(_req, res) {
+  res.sendFile(require('path').join(__dirname, '..', '..', 'dados_demo', 'eventos_ava_demo.csv'));
+}
+
+function importAvaEvents(req, res) {
+  const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
+  const input = typeof req.body?.csv === 'string' ? req.body.csv : req.body?.events;
+  const result = ava.importEvents(input, { dryRun });
+  if (!result.ok) return res.status(400).json({ message: result.error });
+  res.status(dryRun ? 200 : 201).json(result);
 }
 
 async function getClusters(req, res, next) {
@@ -135,7 +202,11 @@ async function getClusters(req, res, next) {
 
 
 function getSimulation(_req, res) { res.json(simulation.getStatus()); }
-function advanceSimulation(req, res) { res.json(simulation.advance(Number(req.body?.days || 7))); }
+function advanceSimulation(req, res) {
+  const days = Number(req.body?.days ?? 7);
+  if (!Number.isInteger(days) || days < 1 || days > 200) return res.status(400).json({ message: 'Informe "days" como inteiro entre 1 e 200.' });
+  res.json(simulation.advance(days));
+}
 function nextSimulationEvent(_req, res) { res.json(simulation.advanceToNextEvent()); }
 function resetSimulation(_req, res) { res.json(simulation.reset()); }
 
@@ -148,7 +219,13 @@ module.exports = {
   previewNotifications,
   generateNotification,
   listNotifications,
-  simulateSend,
+  reviewNotification,
+  listReviews,
+  getStudentAvaWeekly,
+  getClassAvaOverview,
+  listAvaEvents,
+  importAvaEvents,
+  demoCsv,
   getClusters,
   getSimulation,
   advanceSimulation,

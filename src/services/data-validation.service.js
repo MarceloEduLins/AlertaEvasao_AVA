@@ -60,6 +60,23 @@ function validateAcademicData(data) {
     if (!student.registration) warnings.push(`${student.name} não possui matrícula acadêmica demonstrativa.`);
   });
 
+  const pseudoIds = new Set();
+  students.forEach((student) => {
+    if (!student.pseudoId) errors.push(`${student.name} não possui pseudônimo (pseudoId) para os eventos do AVA.`);
+    else if (pseudoIds.has(student.pseudoId)) errors.push(`Pseudônimo duplicado: ${student.pseudoId}.`);
+    pseudoIds.add(student.pseudoId);
+  });
+
+  const activities = Array.isArray(data?.activities) ? data.activities : [];
+  if (!activities.length) errors.push('Nenhuma atividade prevista no AVA (activities).');
+  const activityIds = new Set();
+  activities.forEach((activity) => {
+    if (activityIds.has(activity.id)) errors.push(`Atividade duplicada: ${activity.id}.`);
+    activityIds.add(activity.id);
+    if (!subjectIds.has(activity.subjectId)) errors.push(`Atividade ${activity.id} referencia disciplina inexistente.`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(activity.dueDate || '')) errors.push(`Atividade ${activity.id} com prazo inválido.`);
+  });
+
   classes.forEach((classData) => {
     const classStudents = students.filter((student) => student.classId === classData.id);
     if (Array.isArray(classData.studentIds) && classData.studentIds.length !== classStudents.length) {
@@ -78,7 +95,8 @@ function validateAcademicData(data) {
       enrollments: enrollments.length,
       timetableDays: timetable.length,
       lessonsPerDay: timetable[0]?.periods?.length || 0,
-      totalRAs: subjects.reduce((sum, subject) => sum + (subject.ras?.length || 0), 0)
+      totalRAs: subjects.reduce((sum, subject) => sum + (subject.ras?.length || 0), 0),
+      activities: activities.length
     }
   };
 }

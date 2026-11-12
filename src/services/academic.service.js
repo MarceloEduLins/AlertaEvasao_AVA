@@ -3,7 +3,7 @@ const repository = require('../repositories/academic.repository');
 const DEFAULT_REQUIRED_ATTENDANCE = 75;
 
 function daysBetween(dateString, referenceDate = new Date()) {
-  const date = new Date(`${dateString}T12:00:00`);
+  const date = new Date(`${String(dateString).slice(0, 10)}T12:00:00Z`);
   const ref = new Date(referenceDate);
   const diff = ref.getTime() - date.getTime();
   return Math.max(0, Math.floor(diff / 86400000));
@@ -55,6 +55,15 @@ function calculateAttendance(enrollment, subject, requiredAttendance = DEFAULT_R
 }
 
 function calculateAva(enrollment, referenceDate = new Date()) {
+  // Sem nenhum acesso conhecido o tempo de inatividade é desconhecido, não zero nem infinito.
+  if (!enrollment.lastAvaAccess) {
+    return {
+      lastAccess: null,
+      inactiveDays: null,
+      pendingActivities: Number(enrollment.pendingActivities || 0),
+      alertLevel: 'unknown'
+    };
+  }
   const inactiveDays = daysBetween(enrollment.lastAvaAccess, referenceDate);
   let alertLevel = 'normal';
   if (inactiveDays >= 15) alertLevel = 'critical';
@@ -185,13 +194,18 @@ function getClassDashboard(classId, referenceDate = simulationReferenceDate()) {
 
 function buildFeatureRows(classId, referenceDate = simulationReferenceDate()) {
   const profiles = repository.listStudents(classId).map((student) => getStudentProfile(student.id, referenceDate));
+  const average = (values) => values.length ? values.reduce((a,b)=>a+b,0)/values.length : 0;
+  // Dias sem AVA desconhecidos (aluno sem histórico) são imputados pela média da turma,
+  // apenas para o K-Means; a interface continua exibindo "sem histórico".
+  const knownInactive = profiles.flatMap((p) => p.subjects.map((s) => s.ava.inactiveDays)).filter((v) => Number.isFinite(v));
+  const classInactiveMean = average(knownInactive);
   return profiles.map((profile) => {
     const subjects = profile.subjects;
-    const average = (values) => values.length ? values.reduce((a,b)=>a+b,0)/values.length : 0;
     const avgAttendance = average(subjects.map((s) => s.attendance.currentAttendance));
     const graded = subjects.map((s) => s.assessments[0]?.grade).filter((v)=>Number.isFinite(v));
     const avgGrade = graded.length ? average(graded) : 7;
-    const avgInactiveDays = average(subjects.map((s) => s.ava.inactiveDays));
+    const inactive = subjects.map((s) => s.ava.inactiveDays).filter((v) => Number.isFinite(v));
+    const avgInactiveDays = inactive.length ? average(inactive) : classInactiveMean;
     const pending = subjects.reduce((sum, s) => sum + s.ava.pendingActivities, 0);
     const exams = [];
     const projects = [];

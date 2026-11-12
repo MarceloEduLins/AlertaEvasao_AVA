@@ -1,3 +1,5 @@
+// Usa uma pasta temporária: a verificação não altera a demonstração em andamento.
+require('../tests/helpers/temp-data');
 const repository = require('../src/repositories/academic.repository');
 const simulation = require('../src/services/simulation.service');
 const { checkPython, clusterClass } = require('../src/services/clustering.service');

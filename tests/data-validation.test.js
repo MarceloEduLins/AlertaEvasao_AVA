@@ -1,9 +1,10 @@
+require('./helpers/temp-data');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const repository = require('../src/repositories/academic.repository');
 const { validateAcademicData } = require('../src/services/data-validation.service');
 
-test('base V5 contém turma completa com 30 alunos e seis matérias', () => {
+test('base V6 contém turma completa com 30 alunos e seis matérias', () => {
   repository.resetData();
   const data = repository.readData();
   const result = validateAcademicData(data);
